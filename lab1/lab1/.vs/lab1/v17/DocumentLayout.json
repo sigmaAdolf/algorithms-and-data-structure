@@ -1,0 +1,55 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\rydik\\OneDrive\\Desktop\\\u0414\u043E\u043C\u0430\u0448\u043A\u0438\\\u0410\u043B\u0433\u043E\u0440\u0438\u0442\u043C\u044B\\2 \u043A\u0443\u0440\u0441\\lab1\\lab1\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{C880DEF8-2FB6-4060-96B7-3D26195118CC}|lab1.vcxproj|C:\\Users\\rydik\\OneDrive\\Desktop\\\u0414\u043E\u043C\u0430\u0448\u043A\u0438\\\u0410\u043B\u0433\u043E\u0440\u0438\u0442\u043C\u044B\\2 \u043A\u0443\u0440\u0441\\lab1\\lab1\\lab1.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{C880DEF8-2FB6-4060-96B7-3D26195118CC}|lab1.vcxproj|solutionrelative:lab1.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 1,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedHeight": 618,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "lab1.cpp",
+              "DocumentMoniker": "C:\\Users\\rydik\\OneDrive\\Desktop\\\u0414\u043E\u043C\u0430\u0448\u043A\u0438\\\u0410\u043B\u0433\u043E\u0440\u0438\u0442\u043C\u044B\\2 \u043A\u0443\u0440\u0441\\lab1\\lab1\\lab1.cpp",
+              "RelativeDocumentMoniker": "lab1.cpp",
+              "ToolTip": "C:\\Users\\rydik\\OneDrive\\Desktop\\\u0414\u043E\u043C\u0430\u0448\u043A\u0438\\\u0410\u043B\u0433\u043E\u0440\u0438\u0442\u043C\u044B\\2 \u043A\u0443\u0440\u0441\\lab1\\lab1\\lab1.cpp",
+              "RelativeToolTip": "lab1.cpp",
+              "ViewState": "AgIAAKcAAAAAAAAAAAAiwMIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-11-11T21:21:28.026Z",
+              "EditorCaption": ""
+            }
+          ]
+        },
+        {
+          "DockedHeight": 823,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
