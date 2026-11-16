@@ -14,7 +14,7 @@
       "DocumentGroups": [
         {
           "DockedHeight": 618,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -25,6 +25,10 @@
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "lab1.cpp",
@@ -32,7 +36,7 @@
               "RelativeDocumentMoniker": "lab1.cpp",
               "ToolTip": "C:\\Users\\rydik\\OneDrive\\Desktop\\\u0414\u043E\u043C\u0430\u0448\u043A\u0438\\\u0410\u043B\u0433\u043E\u0440\u0438\u0442\u043C\u044B\\2 \u043A\u0443\u0440\u0441\\lab1\\lab1\\lab1.cpp",
               "RelativeToolTip": "lab1.cpp",
-              "ViewState": "AgIAAKcAAAAAAAAAAAAiwMIAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAA8AAAAAAAAAAAAAAB8AAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2026-11-11T21:21:28.026Z",
               "EditorCaption": ""

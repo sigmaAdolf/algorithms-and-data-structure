@@ -5,11 +5,6 @@
 
 using namespace std;
 
-// Вариант 3. Продвинутый уровень.
-// Задание: система учёта сотрудников компании.
-// Company — Singleton, Employee — агрегация.
-// Подсчёт сотрудников и средней зарплаты.
-
 class Employee {
 private:
     string name;
@@ -61,7 +56,6 @@ public:
     }
 };
 
-// Определение статических полей
 int Employee::employeeCount = 0;
 double Employee::totalSalary = 0;
 
@@ -72,13 +66,11 @@ private:
 
     static Company* instance;
 
-    // Приватный конструктор запрещает создавать компанию напрямую
     Company(const string& n) : name(n) {
         cout << "Создана компания: " << name << endl;
     }
 
 public:
-    // Запрет копирования компании
     Company(const Company&) = delete;
     Company& operator=(const Company&) = delete;
 
@@ -116,7 +108,6 @@ public:
 
     ~Company() {
         cout << "Уничтожена компания: " << name << endl;
-        // Сотрудники не удаляются: компания ими не владеет.
     }
 
     static void destroyInstance() {
@@ -125,7 +116,6 @@ public:
     }
 };
 
-// Изначально объект компании не создан
 Company* Company::instance = nullptr;
 
 int main() {
@@ -135,7 +125,6 @@ int main() {
     cout << "Количество сотрудников: "
         << Employee::getCount() << endl;
 
-    // Сотрудники создаются независимо от компании
     Employee e1("Иван", 50000);
     Employee e2("Мария", 60000);
     Employee e3("Пётр", 55000);
@@ -146,7 +135,6 @@ int main() {
         << Employee::getAverageSalary() << " руб." << endl;
 
     {
-        // Получение единственного экземпляра компании
         Company* c1 = Company::getInstance("Техно");
         Company* c2 = Company::getInstance("Другая компания");
 
@@ -158,10 +146,8 @@ int main() {
         c1->addEmployee(&e2);
         c1->addEmployee(&e3);
 
-        // Проверка nullptr
         c1->addEmployee(nullptr);
 
-        // Проверка повторного добавления
         c1->addEmployee(&e1);
 
         c1->printEmployees();
@@ -178,7 +164,6 @@ int main() {
         cout << "\nКоличество сотрудников: "
             << Employee::getCount() << endl;
 
-        // Уничтожаем компанию раньше сотрудников
         Company::destroyInstance();
     }
 
