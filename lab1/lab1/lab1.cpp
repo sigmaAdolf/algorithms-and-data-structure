@@ -176,5 +176,4 @@ int main() {
         << Employee::getCount() << endl;
 
     cout << "\nЗавершение программы." << endl;
-    return 0;
 }
