@@ -73,7 +73,24 @@ long long measureTime(Func func) {
 int main() {
     setlocale(LC_ALL, "Russian");
 
-    cout << "=== Сравнение производительности: Свой Stack vs std::stack ===" << endl;
+    cout << "=== Анализ сложности операций стека ===" << endl;
+    cout << "push: O(1) амортизированно (иногда O(n) при расширении)" << endl;
+    cout << "pop: O(1)" << endl;
+    cout << "top: O(1)" << endl;
+    cout << "isEmpty: O(1)" << endl;
+    cout << "size: O(1)" << endl << endl;
+
+    cout << "--- Демонстрация работы ---" << endl;
+    Stack<int> s(4); 
+    for (int i = 1; i <= 5; i++) {
+        s.push(i);
+        cout << "push(" << i << "), размер: " << s.size() << endl;
+    }
+    cout << "Верхний элемент (top): " << s.top() << endl;
+    cout << "Извлекаем (pop): " << s.pop();
+    cout << "\nРазмер: " << s.size() << endl;
+
+    cout << "\n=== Сравнение производительности: Свой Stack vs std::stack ===" << endl;
     cout << "Количество элементов: 1000000" << endl << endl;
 
     const int N = 1000000;
