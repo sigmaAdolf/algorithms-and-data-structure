@@ -1,2 +1,13 @@
 .vs/
 *.docx
+# Игнорировать файлы сборки Visual Studio
+x64/
+Debug/
+Release/
+*.obj
+*.exe
+*.pdb
+*.ilk
+*.tlog
+*.idb
+*.lastbuildstate
