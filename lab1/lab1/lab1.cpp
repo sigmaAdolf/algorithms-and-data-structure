@@ -129,9 +129,9 @@ int main() {
     Employee e2("Мария", 60000);
     Employee e3("Пётр", 55000);
 
-    cout << "\nКоличество сотрудников: "
+    cout << "Количество сотрудников: "
         << Employee::getCount() << endl;
-    cout << "Средняя зарплата: "
+    cout << "\nСредняя зарплата: "
         << Employee::getAverageSalary() << " руб." << endl;
 
     {
