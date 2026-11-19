@@ -145,14 +145,14 @@ int main() {
 
     cout << "\nОдносвязный список: ";
     sList.print();
-    cout << "Доступ по индексу sList[2] (должно быть 30): " << sList[2] << endl;
+    cout << "Доступ по индексу sList[2]: " << sList[2] << endl;
 
     DoublyLinkedList<int> dList;
     for (int i = 1; i <= 5; i++) dList.push_back(i * 100);
 
     cout << "\nДвусвязный список (обратный вывод): ";
     dList.printReverse();
-    cout << "Доступ по индексу dList[1] (должно быть 200): " << dList[1] << endl;
+    cout << "Доступ по индексу dList[1]: " << dList[1] << endl;
 
     return 0;
 }
