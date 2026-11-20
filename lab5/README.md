@@ -1,271 +1,832 @@
-# Лабораторная работа №3: Реализация динамического массива (аналог vector). Итераторы
+# Лабораторная работа №5: Стек, очередь, дек, приоритетная очередь
 
 **Студент:** Аджамян Рудик Агаронович  
 **Группа:** ПИЖ-б-о-25-2(1)  
 **Дисциплина:** Алгоритмы и структура данных  
-**Вариант:** 3 (Продвинутый уровень)  
-**Тема индивидуального задания:** Реализация шаблонного класса `Vector<T>` с поддержкой `reverse_iterator` и методов `rbegin`, `rend`.
+**Вариант:** 3  
+**Тема индивидуального задания:** Решение 4 задач на базовые структуры данных.
 
 **Проверила:** Белик Ангелина Игоревна  
 
 ## 1. Цель работы  
-1. Реализовать шаблонный класс `Vector<T>` — аналог `std::vector` — с нуля.
-2. Освоить управление динамической памятью: выделение, расширение, освобождение.
-3. Закрепить «правило трёх» и освоить «правило пяти».
-4. Реализовать итераторы для поддержки range-based for и STL-совместимости.
-6. Провести амортизированный анализ операции `push_back`.
+1. Реализовать основные линейные структуры данных: стек, очередь, дек и приоритетную очередь.
+2. Освоить принципы LIFO (стек) и FIFO (очередь).
+3. Научиться реализовывать эти структуры на основе динамического массива.
+4. Изучить применение стека для решения задач.
+5. Реализовать приоритетную очередь на основе кучи (heap).
 
 ## 2. Теоретическая часть
-**Динамический массив** — это структура данных, память для которой выделяется в куче (heap) во время выполнения программы. В отличие от статических массивов, его размер можно изменять.
+**Стек** — структура данных, работающая по принципу LIFO («последним пришёл — первым ушёл»).
+**Очередь** — структура данных, работающая по принципу FIFO («первым пришёл — первым ушёл»).
+**Дек** — двусторонняя очередь, позволяющая добавлять и удалять элементы с обоих концов.
+**Приоритетная очередь** — очередь, в которой элементы извлекаются в порядке убывания (или возрастания) приоритета. Реализуется на основе двоичной кучи (heap).
 
-**Правило трёх:** если классу нужен собственный деструктор, конструктор копирования или оператор присваивания копированием, то, скорее всего, нужны все три (для предотвращения утечек памяти).
-**Правило пяти:** добавляет к правилу трёх конструктор перемещения и оператор присваивания перемещением (для оптимизации работы с временными объектами).
-
-**Итераторы** — объекты, ведущие себя как указатели. Позволяют перебирать элементы контейнера.
-
-## 3. Постановка задачи
-Согласно варианту 3 (продвинутый уровень), необходимо:
-1. Реализовать класс `Vector` с полной поддержкой «правила пяти».
-2. Реализовать стандартные итераторы (`begin`, `end`).
-3. Реализовать `reverse_iterator` и методы `rbegin`, `rend` для перебора элементов в обратном порядке.
-4. Провести экспериментальный анализ операции `push_back` (амортизированная сложность).
+## 3. Постановка задачи (Вариант 3)
+1. **Стек:** Перевести число из десятичной системы в двоичную.
+2. **Очередь:** Найти максимальный элемент в очереди за O(1).
+3. **Дек:** Найти максимальный элемент в деке за O(1).
+4. **Приоритетная очередь:** Сортировка с помощью приоритетной очереди (Heap Sort).
 
 ## 4. Листинг программы
 
 ```cpp
 #include <iostream>
 #include <stdexcept>
-#include <iomanip>
+#include <string>
+#include <deque>
 
 using namespace std;
 
 template <typename T>
-class Vector {
+class Stack {
 private:
     T* data;
-    int sz;
-    int cap;
-    int copyCount;
-
-public:
-    class reverse_iterator {
-    private:
-        T* ptr;
-    public:
-        reverse_iterator(T* p = nullptr) : ptr(p) {}
-        T& operator*() { return *(ptr - 1); }
-        const T& operator*() const { return *(ptr - 1); }
-        reverse_iterator& operator++() { --ptr; return *this; }
-        reverse_iterator operator++(int) { reverse_iterator temp = *this; --ptr; return temp; }
-        bool operator!=(const reverse_iterator& other) const { return ptr != other.ptr; }
-        bool operator==(const reverse_iterator& other) const { return ptr == other.ptr; }
-    };
-
-    Vector() : data(nullptr), sz(0), cap(0), copyCount(0) {}
-
-    explicit Vector(int n) : sz(n), cap(n), copyCount(0) {
-        data = new T[cap];
-        for (int i = 0; i < sz; i++) data[i] = T();
-    }
-
-    Vector(int n, const T& val) : sz(n), cap(n), copyCount(0) {
-        data = new T[cap];
-        for (int i = 0; i < sz; i++) data[i] = val;
-    }
-
-    Vector(const Vector& other) : sz(other.sz), cap(other.cap), copyCount(other.copyCount) {
-        data = new T[cap];
-        for (int i = 0; i < sz; i++) data[i] = other.data[i];
-    }
-
-    Vector(Vector&& other) noexcept : data(other.data), sz(other.sz), cap(other.cap), copyCount(other.copyCount) {
-        other.data = nullptr;
-        other.sz = 0;
-        other.cap = 0;
-    }
-
-    ~Vector() { delete[] data; }
-
-    Vector& operator=(const Vector& other) {
-        if (this != &other) {
-            Vector temp(other);
-            swap(temp);
-        }
-        return *this;
-    }
-
-    Vector& operator=(Vector&& other) noexcept {
-        if (this != &other) {
-            delete[] data;
-            data = other.data;
-            sz = other.sz;
-            cap = other.cap;
-            copyCount = other.copyCount;
-            other.data = nullptr;
-            other.sz = 0;
-            other.cap = 0;
-        }
-        return *this;
-    }
-
-    void swap(Vector& other) noexcept {
-        std::swap(data, other.data);
-        std::swap(sz, other.sz);
-        std::swap(cap, other.cap);
-        std::swap(copyCount, other.copyCount);
-    }
-
-    T& operator[](int index) {
-        if (index < 0 || index >= sz) throw out_of_range("Index out of range");
-        return data[index];
-    }
-
-    const T& operator[](int index) const {
-        if (index < 0 || index >= sz) throw out_of_range("Index out of range");
-        return data[index];
-    }
-
-    int size() const { return sz; }
-    int capacity() const { return cap; }
-    bool empty() const { return sz == 0; }
-
-    void reserve(int newCap) {
-        if (newCap <= cap) return;
-        T* newData = new T[newCap];
-        for (int i = 0; i < sz; i++) {
-            newData[i] = data[i];
-            copyCount++;
-        }
+    int topIndex;
+    int capacity;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i <= topIndex; i++) newData[i] = data[i];
         delete[] data;
         data = newData;
-        cap = newCap;
+        capacity = newCapacity;
     }
-
-    void push_back(const T& value) {
-        if (sz >= cap) {
-            int newCap = cap == 0 ? 1 : cap * 2;
-            reserve(newCap);
-        }
-        data[sz++] = value;
+public:
+    Stack(int initialCapacity = 10) : capacity(initialCapacity), topIndex(-1) {
+        data = new T[capacity];
     }
-
-    void pop_back() {
-        if (empty()) throw underflow_error("Vector is empty");
-        sz--;
+    ~Stack() { delete[] data; }
+    void push(const T& value) {
+        if (topIndex >= capacity - 1) resize();
+        data[++topIndex] = value;
     }
-
-    void clear() { sz = 0; }
-    int getCopyCount() const { return copyCount; }
-    void resetCopyCount() { copyCount = 0; }
-
-    T* begin() { return data; }
-    T* end() { return data + sz; }
-    const T* begin() const { return data; }
-    const T* end() const { return data + sz; }
-
-    reverse_iterator rbegin() { return reverse_iterator(data + sz); }
-    reverse_iterator rend() { return reverse_iterator(data); }
+    T pop() {
+        if (isEmpty()) throw underflow_error("Stack is empty");
+        return data[topIndex--];
+    }
+    T top() const {
+        if (isEmpty()) throw underflow_error("Stack is empty");
+        return data[topIndex];
+    }
+    bool isEmpty() const { return topIndex == -1; }
 };
+
+string decimalToBinary(int num) {
+    if (num == 0) return "0";
+    Stack<int> st;
+    while (num > 0) {
+        st.push(num % 2);
+        num /= 2;
+    }
+    string result = "";
+    while (!st.isEmpty()) {
+        result += to_string(st.pop());
+    }
+    return result;
+}
+
+template <typename T>
+class MaxQueue {
+private:
+    T* data;
+    int frontIndex;
+    int rearIndex;
+    int capacity;
+    int count;
+    deque<T> maxDeque;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i < count; i++) newData[i] = data[(frontIndex + i) % capacity];
+        delete[] data;
+        data = newData;
+        frontIndex = 0;
+        rearIndex = count;
+        capacity = newCapacity;
+    }
+public:
+    MaxQueue(int initialCapacity = 10) : capacity(initialCapacity), frontIndex(0), rearIndex(0), count(0) {
+        data = new T[capacity];
+    }
+    ~MaxQueue() { delete[] data; }
+    void enqueue(const T& value) {
+        if (count >= capacity) resize();
+        data[rearIndex] = value;
+        rearIndex = (rearIndex + 1) % capacity;
+        while (!maxDeque.empty() && maxDeque.back() < value) maxDeque.pop_back();
+        maxDeque.push_back(value);
+        count++;
+    }
+    T dequeue() {
+        if (isEmpty()) throw underflow_error("Queue is empty");
+        T value = data[frontIndex];
+        if (value == maxDeque.front()) maxDeque.pop_front();
+        frontIndex = (frontIndex + 1) % capacity;
+        count--;
+        return value;
+    }
+    T getMax() const {
+        if (isEmpty()) throw underflow_error("Queue is empty");
+        return maxDeque.front();
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+template <typename T>
+class MaxDeque {
+private:
+    T* data;
+    int frontIndex;
+    int rearIndex;
+    int capacity;
+    int count;
+    deque<T> maxDeque;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i < count; i++) newData[i] = data[(frontIndex + i) % capacity];
+        delete[] data;
+        data = newData;
+        frontIndex = 0;
+        rearIndex = count;
+        capacity = newCapacity;
+    }
+public:
+    MaxDeque(int initialCapacity = 10) : capacity(initialCapacity), frontIndex(0), rearIndex(0), count(0) {
+        data = new T[capacity];
+    }
+    ~MaxDeque() { delete[] data; }
+    void push_back(const T& value) {
+        if (count >= capacity) resize();
+        data[rearIndex] = value;
+        rearIndex = (rearIndex + 1) % capacity;
+        while (!maxDeque.empty() && maxDeque.back() < value) maxDeque.pop_back();
+        maxDeque.push_back(value);
+        count++;
+    }
+    void push_front(const T& value) {
+        if (count >= capacity) resize();
+        frontIndex = (frontIndex - 1 + capacity) % capacity;
+        data[frontIndex] = value;
+        while (!maxDeque.empty() && maxDeque.front() < value) maxDeque.pop_front();
+        maxDeque.push_front(value);
+        count++;
+    }
+    T getMax() const {
+        if (isEmpty()) throw underflow_error("Deque is empty");
+        return maxDeque.front();
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+template <typename T>
+class PriorityQueue {
+private:
+    T* heap;
+    int count;
+    int capacity;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newHeap = new T[newCapacity];
+        for (int i = 0; i < count; i++) newHeap[i] = heap[i];
+        delete[] heap;
+        heap = newHeap;
+        capacity = newCapacity;
+    }
+    void heapifyUp(int index) {
+        while (index > 0) {
+            int parent = (index - 1) / 2;
+            if (heap[index] > heap[parent]) {
+                swap(heap[index], heap[parent]);
+                index = parent;
+            }
+            else break;
+        }
+    }
+    void heapifyDown(int index) {
+        while (true) {
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            int largest = index;
+            if (left < count && heap[left] > heap[largest]) largest = left;
+            if (right < count && heap[right] > heap[largest]) largest = right;
+            if (largest == index) break;
+            swap(heap[index], heap[largest]);
+            index = largest;
+        }
+    }
+public:
+    PriorityQueue(int initialCapacity = 10) : capacity(initialCapacity), count(0) {
+        heap = new T[capacity];
+    }
+    ~PriorityQueue() { delete[] heap; }
+    void push(const T& value) {
+        if (count >= capacity) resize();
+        heap[count] = value;
+        heapifyUp(count);
+        count++;
+    }
+    T pop() {
+        if (isEmpty()) throw underflow_error("PriorityQueue is empty");
+        T maxValue = heap[0];
+        heap[0] = heap[count - 1];
+        count--;
+        heapifyDown(0);
+        return maxValue;
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+void heapSort(int arr[], int n) {
+    PriorityQueue<int> pq(n);
+    for (int i = 0; i < n; i++) pq.push(arr[i]);
+    for (int i = n - 1; i >= 0; i--) arr[i] = pq.pop();
+}
 
 int main() {
     setlocale(LC_ALL, "ru");
 
-    cout << "=== Демонстрация работы Vector (Продвинутый уровень) ===" << endl;
-    Vector<int> v;
+    cout << "ЗАДАНИЕ 1: Стек (Десятичное в двоичное)" << endl;
+    int num = 42;
+    cout << "Число " << num << " в двоичной СС: " << decimalToBinary(num) << endl << endl;
 
-    for (int i = 1; i <= 5; i++) v.push_back(i * 10);
+    cout << "ЗАДАНИЕ 2: Очередь (Максимум за O(1))" << endl;
+    MaxQueue<int> q;
+    q.enqueue(10); q.enqueue(25); q.enqueue(5); q.enqueue(40);
+    cout << "Максимум в очереди: " << q.getMax() << endl;
+    q.dequeue(); q.dequeue(); q.dequeue();
+    cout << "Максимум после удаления трех элементов: " << q.getMax() << endl << endl;
 
-    cout << "Содержимое вектора (range-based for): ";
-    for (int x : v) cout << x << " ";
+    cout << "ЗАДАНИЕ 3: Дек (Максимум за O(1))" << endl;
+    MaxDeque<int> dq;
+    dq.push_back(15); dq.push_back(8); dq.push_front(50); dq.push_back(20);
+    cout << "Максимум в деке: " << dq.getMax() << endl << endl;
+
+    cout << "ЗАДАНИЕ 4: Приоритетная очередь (Heap Sort)" << endl;
+    int arr[] = { 12, 11, 13, 5, 6, 7 };
+    int n = sizeof(arr) / sizeof(arr[0]);
+    cout << "Исходный массив: ";
+    for (int i = 0; i < n; i++) cout << arr[i] << " ";
     cout << endl;
 
-    cout << "Обратный вывод (reverse_iterator): ";
-    for (auto it = v.rbegin(); it != v.rend(); ++it) {
-        cout << *it << " ";
-    }
+    heapSort(arr, n);
+    cout << "Отсортированный массив: ";
+    for (int i = 0; i < n; i++) cout << arr[i] << " ";
     cout << endl;
 
-    cout << "\n=== Амортизированный анализ push_back ===" << endl;
-    cout << setw(10) << "n" << setw(15) << "Копирований" << setw(15) << "Всего операций" << setw(15) << "Среднее" << endl;
-    cout << "-------------------------------------------------------" << endl;
+    return 0;
+}#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <deque>
 
-    for (int n = 1000; n <= 100000; n *= 10) {
-        Vector<int> vec;
-        for (int i = 0; i < n; i++) vec.push_back(i);
-        int totalOps = n + vec.getCopyCount();
-        double average = (double)totalOps / n;
-        cout << setw(10) << n << setw(15) << vec.getCopyCount() << setw(15) << totalOps << setw(15) << fixed << setprecision(2) << average << endl;
+using namespace std;
+
+template <typename T>
+class Stack {
+private:
+    T* data;
+    int topIndex;
+    int capacity;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i <= topIndex; i++) newData[i] = data[i];
+        delete[] data;
+        data = newData;
+        capacity = newCapacity;
     }
+public:
+    Stack(int initialCapacity = 10) : capacity(initialCapacity), topIndex(-1) {
+        data = new T[capacity];
+    }
+    ~Stack() { delete[] data; }
+    void push(const T& value) {
+        if (topIndex >= capacity - 1) resize();
+        data[++topIndex] = value;
+    }
+    T pop() {
+        if (isEmpty()) throw underflow_error("Stack is empty");
+        return data[topIndex--];
+    }
+    T top() const {
+        if (isEmpty()) throw underflow_error("Stack is empty");
+        return data[topIndex];
+    }
+    bool isEmpty() const { return topIndex == -1; }
+};
+
+string decimalToBinary(int num) {
+    if (num == 0) return "0";
+    Stack<int> st;
+    while (num > 0) {
+        st.push(num % 2);
+        num /= 2;
+    }
+    string result = "";
+    while (!st.isEmpty()) {
+        result += to_string(st.pop());
+    }
+    return result;
+}
+
+template <typename T>
+class MaxQueue {
+private:
+    T* data;
+    int frontIndex;
+    int rearIndex;
+    int capacity;
+    int count;
+    deque<T> maxDeque;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i < count; i++) newData[i] = data[(frontIndex + i) % capacity];
+        delete[] data;
+        data = newData;
+        frontIndex = 0;
+        rearIndex = count;
+        capacity = newCapacity;
+    }
+public:
+    MaxQueue(int initialCapacity = 10) : capacity(initialCapacity), frontIndex(0), rearIndex(0), count(0) {
+        data = new T[capacity];
+    }
+    ~MaxQueue() { delete[] data; }
+    void enqueue(const T& value) {
+        if (count >= capacity) resize();
+        data[rearIndex] = value;
+        rearIndex = (rearIndex + 1) % capacity;
+        while (!maxDeque.empty() && maxDeque.back() < value) maxDeque.pop_back();
+        maxDeque.push_back(value);
+        count++;
+    }
+    T dequeue() {
+        if (isEmpty()) throw underflow_error("Queue is empty");
+        T value = data[frontIndex];
+        if (value == maxDeque.front()) maxDeque.pop_front();
+        frontIndex = (frontIndex + 1) % capacity;
+        count--;
+        return value;
+    }
+    T getMax() const {
+        if (isEmpty()) throw underflow_error("Queue is empty");
+        return maxDeque.front();
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+template <typename T>
+class MaxDeque {
+private:
+    T* data;
+    int frontIndex;
+    int rearIndex;
+    int capacity;
+    int count;
+    deque<T> maxDeque;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i < count; i++) newData[i] = data[(frontIndex + i) % capacity];
+        delete[] data;
+        data = newData;
+        frontIndex = 0;
+        rearIndex = count;
+        capacity = newCapacity;
+    }
+public:
+    MaxDeque(int initialCapacity = 10) : capacity(initialCapacity), frontIndex(0), rearIndex(0), count(0) {
+        data = new T[capacity];
+    }
+    ~MaxDeque() { delete[] data; }
+    void push_back(const T& value) {
+        if (count >= capacity) resize();
+        data[rearIndex] = value;
+        rearIndex = (rearIndex + 1) % capacity;
+        while (!maxDeque.empty() && maxDeque.back() < value) maxDeque.pop_back();
+        maxDeque.push_back(value);
+        count++;
+    }
+    void push_front(const T& value) {
+        if (count >= capacity) resize();
+        frontIndex = (frontIndex - 1 + capacity) % capacity;
+        data[frontIndex] = value;
+        while (!maxDeque.empty() && maxDeque.front() < value) maxDeque.pop_front();
+        maxDeque.push_front(value);
+        count++;
+    }
+    T getMax() const {
+        if (isEmpty()) throw underflow_error("Deque is empty");
+        return maxDeque.front();
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+template <typename T>
+class PriorityQueue {
+private:
+    T* heap;
+    int count;
+    int capacity;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newHeap = new T[newCapacity];
+        for (int i = 0; i < count; i++) newHeap[i] = heap[i];
+        delete[] heap;
+        heap = newHeap;
+        capacity = newCapacity;
+    }
+    void heapifyUp(int index) {
+        while (index > 0) {
+            int parent = (index - 1) / 2;
+            if (heap[index] > heap[parent]) {
+                swap(heap[index], heap[parent]);
+                index = parent;
+            }
+            else break;
+        }
+    }
+    void heapifyDown(int index) {
+        while (true) {
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            int largest = index;
+            if (left < count && heap[left] > heap[largest]) largest = left;
+            if (right < count && heap[right] > heap[largest]) largest = right;
+            if (largest == index) break;
+            swap(heap[index], heap[largest]);
+            index = largest;
+        }
+    }
+public:
+    PriorityQueue(int initialCapacity = 10) : capacity(initialCapacity), count(0) {
+        heap = new T[capacity];
+    }
+    ~PriorityQueue() { delete[] heap; }
+    void push(const T& value) {
+        if (count >= capacity) resize();
+        heap[count] = value;
+        heapifyUp(count);
+        count++;
+    }
+    T pop() {
+        if (isEmpty()) throw underflow_error("PriorityQueue is empty");
+        T maxValue = heap[0];
+        heap[0] = heap[count - 1];
+        count--;
+        heapifyDown(0);
+        return maxValue;
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+void heapSort(int arr[], int n) {
+    PriorityQueue<int> pq(n);
+    for (int i = 0; i < n; i++) pq.push(arr[i]);
+    for (int i = n - 1; i >= 0; i--) arr[i] = pq.pop();
+}
+
+int main() {
+    setlocale(LC_ALL, "ru");
+
+    cout << "ЗАДАНИЕ 1: Стек (Десятичное в двоичное)" << endl;
+    int num = 42;
+    cout << "Число " << num << " в двоичной СС: " << decimalToBinary(num) << endl << endl;
+
+    cout << "ЗАДАНИЕ 2: Очередь (Максимум за O(1))" << endl;
+    MaxQueue<int> q;
+    q.enqueue(10); q.enqueue(25); q.enqueue(5); q.enqueue(40);
+    cout << "Максимум в очереди: " << q.getMax() << endl;
+    q.dequeue(); q.dequeue(); q.dequeue();
+    cout << "Максимум после удаления трех элементов: " << q.getMax() << endl << endl;
+
+    cout << "ЗАДАНИЕ 3: Дек (Максимум за O(1))" << endl;
+    MaxDeque<int> dq;
+    dq.push_back(15); dq.push_back(8); dq.push_front(50); dq.push_back(20);
+    cout << "Максимум в деке: " << dq.getMax() << endl << endl;
+
+    cout << "ЗАДАНИЕ 4: Приоритетная очередь (Heap Sort)" << endl;
+    int arr[] = { 12, 11, 13, 5, 6, 7 };
+    int n = sizeof(arr) / sizeof(arr[0]);
+    cout << "Исходный массив: ";
+    for (int i = 0; i < n; i++) cout << arr[i] << " ";
+    cout << endl;
+
+    heapSort(arr, n);
+    cout << "Отсортированный массив: ";
+    for (int i = 0; i < n; i++) cout << arr[i] << " ";
+    cout << endl;
+
+    return 0;
+}#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <deque>
+
+using namespace std;
+
+template <typename T>
+class Stack {
+private:
+    T* data;
+    int topIndex;
+    int capacity;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i <= topIndex; i++) newData[i] = data[i];
+        delete[] data;
+        data = newData;
+        capacity = newCapacity;
+    }
+public:
+    Stack(int initialCapacity = 10) : capacity(initialCapacity), topIndex(-1) {
+        data = new T[capacity];
+    }
+    ~Stack() { delete[] data; }
+    void push(const T& value) {
+        if (topIndex >= capacity - 1) resize();
+        data[++topIndex] = value;
+    }
+    T pop() {
+        if (isEmpty()) throw underflow_error("Stack is empty");
+        return data[topIndex--];
+    }
+    T top() const {
+        if (isEmpty()) throw underflow_error("Stack is empty");
+        return data[topIndex];
+    }
+    bool isEmpty() const { return topIndex == -1; }
+};
+
+string decimalToBinary(int num) {
+    if (num == 0) return "0";
+    Stack<int> st;
+    while (num > 0) {
+        st.push(num % 2);
+        num /= 2;
+    }
+    string result = "";
+    while (!st.isEmpty()) {
+        result += to_string(st.pop());
+    }
+    return result;
+}
+
+template <typename T>
+class MaxQueue {
+private:
+    T* data;
+    int frontIndex;
+    int rearIndex;
+    int capacity;
+    int count;
+    deque<T> maxDeque;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i < count; i++) newData[i] = data[(frontIndex + i) % capacity];
+        delete[] data;
+        data = newData;
+        frontIndex = 0;
+        rearIndex = count;
+        capacity = newCapacity;
+    }
+public:
+    MaxQueue(int initialCapacity = 10) : capacity(initialCapacity), frontIndex(0), rearIndex(0), count(0) {
+        data = new T[capacity];
+    }
+    ~MaxQueue() { delete[] data; }
+    void enqueue(const T& value) {
+        if (count >= capacity) resize();
+        data[rearIndex] = value;
+        rearIndex = (rearIndex + 1) % capacity;
+        while (!maxDeque.empty() && maxDeque.back() < value) maxDeque.pop_back();
+        maxDeque.push_back(value);
+        count++;
+    }
+    T dequeue() {
+        if (isEmpty()) throw underflow_error("Queue is empty");
+        T value = data[frontIndex];
+        if (value == maxDeque.front()) maxDeque.pop_front();
+        frontIndex = (frontIndex + 1) % capacity;
+        count--;
+        return value;
+    }
+    T getMax() const {
+        if (isEmpty()) throw underflow_error("Queue is empty");
+        return maxDeque.front();
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+template <typename T>
+class MaxDeque {
+private:
+    T* data;
+    int frontIndex;
+    int rearIndex;
+    int capacity;
+    int count;
+    deque<T> maxDeque;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newData = new T[newCapacity];
+        for (int i = 0; i < count; i++) newData[i] = data[(frontIndex + i) % capacity];
+        delete[] data;
+        data = newData;
+        frontIndex = 0;
+        rearIndex = count;
+        capacity = newCapacity;
+    }
+public:
+    MaxDeque(int initialCapacity = 10) : capacity(initialCapacity), frontIndex(0), rearIndex(0), count(0) {
+        data = new T[capacity];
+    }
+    ~MaxDeque() { delete[] data; }
+    void push_back(const T& value) {
+        if (count >= capacity) resize();
+        data[rearIndex] = value;
+        rearIndex = (rearIndex + 1) % capacity;
+        while (!maxDeque.empty() && maxDeque.back() < value) maxDeque.pop_back();
+        maxDeque.push_back(value);
+        count++;
+    }
+    void push_front(const T& value) {
+        if (count >= capacity) resize();
+        frontIndex = (frontIndex - 1 + capacity) % capacity;
+        data[frontIndex] = value;
+        while (!maxDeque.empty() && maxDeque.front() < value) maxDeque.pop_front();
+        maxDeque.push_front(value);
+        count++;
+    }
+    T getMax() const {
+        if (isEmpty()) throw underflow_error("Deque is empty");
+        return maxDeque.front();
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+template <typename T>
+class PriorityQueue {
+private:
+    T* heap;
+    int count;
+    int capacity;
+    void resize() {
+        int newCapacity = capacity * 2;
+        T* newHeap = new T[newCapacity];
+        for (int i = 0; i < count; i++) newHeap[i] = heap[i];
+        delete[] heap;
+        heap = newHeap;
+        capacity = newCapacity;
+    }
+    void heapifyUp(int index) {
+        while (index > 0) {
+            int parent = (index - 1) / 2;
+            if (heap[index] > heap[parent]) {
+                swap(heap[index], heap[parent]);
+                index = parent;
+            }
+            else break;
+        }
+    }
+    void heapifyDown(int index) {
+        while (true) {
+            int left = 2 * index + 1;
+            int right = 2 * index + 2;
+            int largest = index;
+            if (left < count && heap[left] > heap[largest]) largest = left;
+            if (right < count && heap[right] > heap[largest]) largest = right;
+            if (largest == index) break;
+            swap(heap[index], heap[largest]);
+            index = largest;
+        }
+    }
+public:
+    PriorityQueue(int initialCapacity = 10) : capacity(initialCapacity), count(0) {
+        heap = new T[capacity];
+    }
+    ~PriorityQueue() { delete[] heap; }
+    void push(const T& value) {
+        if (count >= capacity) resize();
+        heap[count] = value;
+        heapifyUp(count);
+        count++;
+    }
+    T pop() {
+        if (isEmpty()) throw underflow_error("PriorityQueue is empty");
+        T maxValue = heap[0];
+        heap[0] = heap[count - 1];
+        count--;
+        heapifyDown(0);
+        return maxValue;
+    }
+    bool isEmpty() const { return count == 0; }
+};
+
+void heapSort(int arr[], int n) {
+    PriorityQueue<int> pq(n);
+    for (int i = 0; i < n; i++) pq.push(arr[i]);
+    for (int i = n - 1; i >= 0; i--) arr[i] = pq.pop();
+}
+
+int main() {
+    setlocale(LC_ALL, "ru");
+
+    cout << "ЗАДАНИЕ 1: Стек (Десятичное в двоичное)" << endl;
+    int num = 42;
+    cout << "Число " << num << " в двоичной СС: " << decimalToBinary(num) << endl << endl;
+
+    cout << "ЗАДАНИЕ 2: Очередь (Максимум за O(1))" << endl;
+    MaxQueue<int> q;
+    q.enqueue(10); q.enqueue(25); q.enqueue(5); q.enqueue(40);
+    cout << "Максимум в очереди: " << q.getMax() << endl;
+    q.dequeue(); q.dequeue(); q.dequeue();
+    cout << "Максимум после удаления трех элементов: " << q.getMax() << endl << endl;
+
+    cout << "ЗАДАНИЕ 3: Дек (Максимум за O(1))" << endl;
+    MaxDeque<int> dq;
+    dq.push_back(15); dq.push_back(8); dq.push_front(50); dq.push_back(20);
+    cout << "Максимум в деке: " << dq.getMax() << endl << endl;
+
+    cout << "ЗАДАНИЕ 4: Приоритетная очередь (Heap Sort)" << endl;
+    int arr[] = { 12, 11, 13, 5, 6, 7 };
+    int n = sizeof(arr) / sizeof(arr[0]);
+    cout << "Исходный массив: ";
+    for (int i = 0; i < n; i++) cout << arr[i] << " ";
+    cout << endl;
+
+    heapSort(arr, n);
+    cout << "Отсортированный массив: ";
+    for (int i = 0; i < n; i++) cout << arr[i] << " ";
+    cout << endl;
 
     return 0;
 }
 ```
 
-## 5. Результаты работы программы
+## 5. Результат работы программы
 
-Ниже приведены скриншоты работы программы.
-
-![Демонстрация работы Vector и reverse_iterator](screenshots/img-1.png)   
-**Рисунок 1 — `img-1.png`.** Демонстрация работы контейнера и обратного итератора.  
-
-![Амортизированный анализ](screenshots/img-2.png)   
-**Рисунок 2 — `img-2.png`.** Амортизированный анализ операции push_back.  
+![Демонстрация работы структур данных](screenshots/img-1.png)   
+**Рисунок 1 — `img-1.png`.** Демонстрация работы всех 4 заданий.
 
 ## 6. Анализ сложности операций
-- **`push_back`**: **O(1)** амортизированно. В худшем случае (при расширении) — O(n), так как нужно скопировать все элементы. Но благодаря удвоению емкости это происходит редко.
-- **`pop_back`**: **O(1)**. Уменьшение счетчика размера.
-- **`operator[]`**: **O(1)**. Доступ по индексу в массиве.
-- **`reserve`**: **O(n)**. Требуется выделить новую память и скопировать туда `n` элементов.
-- **`size`, `capacity`, `empty`**: **O(1)**.
-- **Итераторы (`begin`, `end`, `rbegin`, `rend`)**: **O(1)**. Возврат указателя.
+- **Стек (push, pop, top)**: O(1), так как работа происходит только с верхним элементом.
+- **Очередь (enqueue, dequeue)**: O(1). Поиск максимума в моей реализации также O(1), так как используется вспомогательный дек.
+- **Дек (push_front, push_back, pop_front, pop_back)**: O(1). Поиск максимума O(1).
+- **Приоритетная очередь (push, pop)**: O(log n), так как требуется просеивание элемента по куче (heapify). Верхний элемент `top()` — O(1).
+- **Heap Sort**: O(n log n), так как мы n раз добавляем элементы в кучу (log n) и n раз извлекаем.
 
-## 8. Выводы
-В ходе работы был реализован шаблонный динамический массив `Vector<T>`. Освоено ручное управление памятью, реализовано «правило пяти» для предотвращения утечек. Реализованы прямые и обратные итераторы (`reverse_iterator`), что позволило использовать `range-based for` и обходить массив в обратном порядке. Экспериментально доказана амортизированная сложность O(1) для `push_back`.  
+## 7. Выводы
+В ходе работы были реализованы стек, очередь, дек и приоритетная очередь. Решены задачи на применение этих структур: перевод в двоичную систему, поиск максимума за O(1), сортировка кучей. Освоены принципы работы LIFO и FIFO, а также реализация кучи для приоритетной очереди.
 
-## 7. Ответы на контрольные вопросы
 
-### 1. Почему динамический массив называется «динамическим»?
-Потому что его размер определяется не на этапе компиляции, а во время выполнения программы. Он может изменять свой размер по мере необходимости.
+## 8. Ответы на контрольные вопросы
 
-### 2. Что такое ёмкость (capacity) и чем она отличается от размера (size)?
-**Размер (size)** — количество элементов, фактически хранящихся в контейнере. 
-**Ёмкость (capacity)** — количество элементов, которое контейнер может вместить в уже выделенную память без расширения. Емкость всегда больше или равна размеру.
+### 1. В чём заключается принцип работы стека (LIFO)?
+LIFO (Last In, First Out) — последний добавленный элемент извлекается первым. Как стопка тарелок: чтобы взять нижнюю, нужно сначала убрать верхние.
 
-### 3. Почему при расширении массива ёмкость удваивается, а не увеличивается на фиксированное число?
-Если увеличивать емкость на константу, перевыделение памяти будет происходить на каждом шаге, что даст квадратичную сложность O(n²) при `n` добавлениях. Удвоение обеспечивает амортизированную сложность O(1), так как суммарное количество копирований при `n` вставках не превышает `2n`.
+### 2. В чём заключается принцип работы очереди (FIFO)?
+FIFO (First In, First Out) — первый добавленный элемент извлекается первым. Как очередь в магазине.
 
-### 4. Какова амортизированная сложность операции push_back? Почему?
-**O(1)**. Хотя иногда при переполнении операция занимает O(n) (копирование), эти случаи происходят логарифмически редко (при удвоении емкости). В среднем на одну операцию добавления приходится константное количество действий.
+### 3. Чем дек отличается от обычной очереди?
+Дек (Double-Ended Queue) позволяет добавлять и удалять элементы с обоих концов (и в начало, и в конец), а обычная очередь — только с одного (добавление в конец, удаление из начала).
 
-### 5. Что такое «правило трёх»? Когда оно применяется?
-Правило трёх гласит: если классу требуется собственный деструктор, конструктор копирования или оператор присваивания копированием, то, вероятнее всего, ему нужны все три. Применяется, когда класс управляет динамическими ресурсами, чтобы избежать поверхностного копирования и двойного удаления.
+### 4. Что такое приоритетная очередь? Где она применяется?
+Это очередь, где элементы извлекаются в зависимости от их приоритета. Применяется в алгоритмах Дейкстры, планировщиках задач ОС, сжатии Хаффмана.
 
-### 6. Что такое «правило пяти»? Чем оно отличается от «правила трёх»?
-«Правило пяти» добавляет к правилу трёх конструктор перемещения и оператор присваивания перемещением. Это позволяет оптимизировать работу с временными объектами (rvalue), избегая дорогостоящего глубокого копирования за счёт «кражи» ресурсов.
+### 5. Как реализовать стек на основе динамического массива?
+Нужно хранить массив и индекс верхнего элемента (`topIndex`). При добавлении увеличивать индекс, при удалении — уменьшать. Если места нет — расширять массив.
 
-### 7. В чём разница между конструктором копирования и оператором присваивания?
-Конструктор копирования создаёт **новый** объект на основе существующего. Оператор присваивания изменяет состояние **уже существующего** объекта, при этом требуется освободить старые ресурсы, чтобы не было утечек.
+### 6. Как реализовать очередь на основе кольцевого буфера?
+Нужно использовать массив, указатель на начало (`front`) и указатель на конец (`rear`). При добавлении `rear = (rear + 1) % capacity`. При удалении `front = (front + 1) % capacity`. Это позволяет избежать сдвига элементов.
 
-### 8. Зачем нужна проверка if (this != &other) в операторе присваивания?
-Это защита от самоприсваивания. Без неё программа может удалить свои собственные данные перед их копированием, что приведет к потере данных или ошибке.
+### 7. Почему приоритетную очередь обычно реализуют на куче?
+Куча (heap) позволяет выполнять вставку и извлечение максимального элемента за O(log n), а получение максимума — за O(1). Это оптимальный баланс для данной структуры.
 
-### 9. Что такое итератор? Как он связан с указателем?
-Итератор — это объект, предоставляющий доступ к элементам контейнера. В простейших контейнерах (как `Vector`) итераторы реализуются как обычные указатели (`T*`).
+### 8. Какова сложность операций push и pop в стеке?
+**O(1)**. Не зависит от количества элементов.
 
-### 10. Зачем нужны методы begin() и end()?
-`begin()` возвращает итератор на первый элемент. `end()` возвращает итератор на элемент, следующий за последним. Это стандартный контракт STL для работы с полуинтервалом `[begin, end)`.
+### 9. Какова сложность операций enqueue и dequeue в очереди?
+**O(1)** (при использовании кольцевого буфера или связного списка).
 
-### 11. Как реализовать range-based for для своего контейнера?
-Класс должен предоставить методы `begin()` и `end()`. Компилятор автоматически превратит `for (int x : v)` в цикл `for (auto it = v.begin(); it != v.end(); ++it)`.
+### 10. Какова сложность операций в приоритетной очереди? Почему?
+**O(log n)** для вставки и извлечения, потому что после изменения структуры кучи нужно восстанавливать её свойства (просеивать элемент вверх или вниз), а высота кучи равна log n. Получение максимума — O(1).
 
-### 12. Что такое «глубокое копирование»? Чем оно отличается от «поверхностного»?
-**Поверхностное** копирует только указатель, из-за чего два объекта указывают на одну память. **Глубокое** выделяет новую память и поэлементно копирует туда данные, делая объекты независимыми.
+### 11. Как проверить правильность расстановки скобок с помощью стека?
+Нужно идти по строке. Открывающую скобку класть в стек. При закрывающей — проверять, совпадает ли она с верхней в стеке. Если в конце стек пуст — скобки расставлены верно.
 
-### 13. Что такое семантика перемещения и зачем она нужна?
-Это возможность «забирать» ресурсы у временных объектов (rvalue) вместо их копирования. Позволяет ускорить программу за счёт отказа от глубокого копирования.
+### 12. Как реализовать очередь на двух стеках? Какова сложность?
+Есть стек для добавления (`in`) и стек для извлечения (`out`). При добавлении кладем в `in`. При извлечении, если `out` пуст, перекладываем все элементы из `in` в `out`, затем извлекаем из `out`. Амортизированная сложность — **O(1)**.
 
-### 14. Почему конструктор перемещения помечается noexcept?
-Потому что стандартная библиотека использует перемещение при расширении контейнеров только в том случае, если оно гарантированно не выбрасывает исключений (noexcept).
+### 13. Как реализовать дек на основе двусвязного списка?
+Каждый узел содержит указатели на следующий и предыдущий. Добавление/удаление с обоих концов выполняется за O(1) путем перестановки указателей `head` и `tail`.
 
-### 15. Как правильно освобождать память в деструкторе?
-Использовать оператор `delete[]` для памяти, выделенной через `new[]`. Проверка на `nullptr` не обязательна, так как `delete[] nullptr` безопасно.
+### 14. Как реализовать дек на основе кольцевого буфера?
+Так же, как и очередь, но нужно добавить операции `push_front` и `pop_back`. При `push_front` индекс `front` уменьшается на 1 (с учетом закольцовывания). При `pop_back` уменьшается индекс `rear`.
+
+### 15. Как реализовать стек с поддержкой получения минимума за О(1)?
+Нужно использовать два стека: основной и вспомогательный. В основной кладем все элементы, а во вспомогательный — только текущий минимум. При удалении элемента из основного, если он равен минимуму, удаляем и из вспомогательного. Тогда `top()` вспомогательного стека всегда будет минимумом.
